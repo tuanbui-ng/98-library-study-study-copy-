@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>The 98% Library</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Graded readers written to Nation's BNC/COCA word family lists, with a lexical coverage profiler.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400&display=swap">
+<style>
+/* Layout: a reading room. Shelves of level-graded books; a book opens as a page with its coverage profile alongside. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #fdfdfe;
+  --surface-2: #eaeef3;
+  --ink: #10161f;
+  --ink-2: #455064;
+  --muted: #5f6a7d;
+  --line: #d8dee6;
+  --accent: #1c5cab;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2ecf8;
+  --within: #2a78d6;
+  --beyond: #eb6834;
+  --names: #1baf7a;
+  --good: #0ca30c; --good-ink: #006300;
+  --warn: #fab219; --warn-ink: #7a5300;
+  --crit: #d03b3b; --crit-ink: #a12424;
+  --hl-beyond: rgba(235, 104, 52, .32);
+  --hl-names: rgba(27, 175, 122, .22);
+  --hl-a: rgba(42, 120, 214, .14);
+  --hl-b: rgba(42, 120, 214, .28);
+  --hl-c: rgba(42, 120, 214, .42);
+  --lv1: #86b6ef; --lv2: #6da7ec; --lv3: #5598e7; --lv4: #3987e5; --lv5: #2a78d6; --lv6: #256abf; --lv7: #184f95; --lv8: #0d366b;
+  --lv-ink-light: #0b1a2e; --lv-ink-dark: #ffffff;
+  --shadow: 0 1px 2px rgba(16, 22, 31, .06), 0 4px 14px rgba(16, 22, 31, .05);
+  --font-display: "Literata", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-read: "Literata", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-ui: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --step--1: .875rem; --step-0: 1rem; --step-1: 1.2rem; --step-2: 1.5rem; --step-3: 2rem; --step-4: clamp(2rem, 4.6vw, 2.9rem);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1217; --surface: #151a21; --surface-2: #1c222b; --ink: #edf0f4; --ink-2: #b6bfcb; --muted: #95a0ae; --line: #29313b;
+    --accent: #6da7ec; --accent-ink: #0b1a2e; --accent-soft: #182a42;
+    --within: #3987e5; --beyond: #d95926; --names: #199e70;
+    --good-ink: #39c239; --warn-ink: #f2c24a; --crit-ink: #ec7a7a;
+    --hl-beyond: rgba(217, 89, 38, .42); --hl-names: rgba(25, 158, 112, .32);
+    --hl-a: rgba(57, 135, 229, .20); --hl-b: rgba(57, 135, 229, .34); --hl-c: rgba(57, 135, 229, .50);
+    --lv1: #b7d3f6; --lv2: #9ec5f4; --lv3: #86b6ef; --lv4: #6da7ec; --lv5: #5598e7; --lv6: #3987e5; --lv7: #256abf; --lv8: #184f95;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1217; --surface: #151a21; --surface-2: #1c222b; --ink: #edf0f4; --ink-2: #b6bfcb; --muted: #95a0ae; --line: #29313b;
+  --accent: #6da7ec; --accent-ink: #0b1a2e; --accent-soft: #182a42;
+  --within: #3987e5; --beyond: #d95926; --names: #199e70;
+  --good-ink: #39c239; --warn-ink: #f2c24a; --crit-ink: #ec7a7a;
+  --hl-beyond: rgba(217, 89, 38, .42); --hl-names: rgba(25, 158, 112, .32);
+  --hl-a: rgba(57, 135, 229, .20); --hl-b: rgba(57, 135, 229, .34); --hl-c: rgba(57, 135, 229, .50);
+  --lv1: #b7d3f6; --lv2: #9ec5f4; --lv3: #86b6ef; --lv4: #6da7ec; --lv5: #5598e7; --lv6: #3987e5; --lv7: #256abf; --lv8: #184f95;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-ui); font-size: var(--step-0); line-height: 1.5;
+}
+.wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; font-weight: 600; letter-spacing: -.01em; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.eyebrow { font-family: var(--font-data); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Masthead */
+.masthead { border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+.masthead .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding-block: 12px; }
+.wordmark { display: flex; align-items: baseline; gap: 10px; text-decoration: none; color: var(--ink); }
+.wordmark b { font-family: var(--font-display); font-size: 1.35rem; font-weight: 650; letter-spacing: -.02em; }
+.wordmark b span { color: var(--accent); }
+.wordmark small { color: var(--muted); font-size: var(--step--1); }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs a { text-decoration: none; color: var(--ink-2); padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: var(--step--1); }
+.tabs a:hover { background: var(--surface-2); color: var(--ink); }
+.tabs a[aria-current="page"] { background: var(--ink); color: var(--bg); }
+
+main { padding-block: 28px 56px; }
+section[data-view] { display: grid; gap: 28px; }
+
+/* Library */
+.intro { display: grid; gap: 14px; max-width: 74ch; }
+.intro h1 { font-size: var(--step-4); line-height: 1.12; }
+.intro p { margin: 0; color: var(--ink-2); font-size: 1.08rem; max-width: 66ch; }
+.factline { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--step--1); color: var(--ink-2); }
+.factline span::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 8px; vertical-align: middle; }
+
+.levelbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 700; font-size: var(--step--1); color: var(--ink-2);
+}
+.chip:hover { border-color: var(--ink-2); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+
+.shelf { display: grid; gap: 14px; }
+.shelf-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.shelf-head h2 { font-size: var(--step-2); display: flex; align-items: center; gap: 10px; }
+.shelf-head h2 .swatch { width: 16px; height: 16px; }
+.shelf-head p { margin: 0; color: var(--ink-2); font-size: var(--step--1); }
+.shelf-head .kind { margin-left: auto; }
+.books { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.book {
+  display: grid; grid-template-rows: auto auto 1fr auto; gap: 8px; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+  text-decoration: none; color: inherit; transition: border-color .15s, transform .15s;
+}
+.book:hover { border-color: var(--accent); transform: translateY(-1px); }
+.book-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.levtag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data); font-size: .75rem; color: var(--ink-2); }
+.book h3 { font-size: 1.3rem; line-height: 1.2; }
+.book p { margin: 0; color: var(--ink-2); font-size: .95rem; }
+.book-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--muted); padding-top: 8px; border-top: 1px dashed var(--line); }
+.book-meta strong { color: var(--ink); font-weight: 500; }
+.genre { font-size: .78rem; color: var(--muted); }
+.book { padding: 0; overflow: hidden; grid-template-rows: auto auto auto 1fr auto; }
+.book > :not(.thumb) { margin-inline: 18px; }
+.book > .book-meta { margin-bottom: 16px; }
+.thumb { aspect-ratio: 16 / 9; background: var(--surface-2); overflow: hidden; border-bottom: 1px solid var(--line); }
+.thumb svg { width: 100%; height: 100%; display: block; }
+.thumb svg [filter] { filter: none; }
+.book-top { margin-top: 2px; }
+.soon { border: 1px dashed var(--line); border-radius: var(--radius); padding: 18px; color: var(--muted); font-size: .92rem; }
+.ill { margin: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); aspect-ratio: 16 / 9; max-height: 440px; width: 100%; background: var(--surface-2); }
+.ill svg { width: 100%; height: 100%; display: block; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ill svg, :root:not([data-theme="light"]) .thumb svg { filter: brightness(.88); } }
+:root[data-theme="dark"] .ill svg, :root[data-theme="dark"] .thumb svg { filter: brightness(.88); }
+.wc { font-family: var(--font-data); font-size: .85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; margin: 6px 0 0; max-width: 64ch; }
+.genre-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.genre-nav .group { font-family: var(--font-data); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); align-self: center; margin: 0 2px 0 6px; }
+.genre-sec { display: grid; gap: 14px; }
+.genre-sec .count { font-family: var(--font-data); font-size: .8rem; color: var(--muted); font-weight: 400; }
+
+/* Reader */
+.backlink { display: inline-flex; gap: 6px; align-items: center; font-weight: 700; text-decoration: none; font-size: var(--step--1); }
+.reader-head { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; }
+.reader-head h1 { font-size: var(--step-4); line-height: 1.1; margin-top: 6px; }
+.reader-head .blurb { margin: 10px 0 0; color: var(--ink-2); font-size: 1.08rem; max-width: 60ch; }
+.stamp {
+  transform: rotate(-3deg); border: 3px double var(--accent); color: var(--accent); border-radius: 6px;
+  padding: 8px 14px; text-align: center; font-family: var(--font-data); line-height: 1.15; margin-top: 8px; background: var(--surface);
+}
+.stamp .big { font-size: 1.5rem; font-weight: 500; display: block; }
+.stamp .small { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; }
+@media (prefers-reduced-motion: reduce) { .stamp { transform: none; } .book, .book:hover { transform: none; transition: none; } }
+
+.reader-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 36px; align-items: start; }
+.story { font-family: var(--font-read); font-size: 1.16rem; line-height: 1.75; max-width: 64ch; }
+.story p { margin: 0 0 1.05em; }
+.story .w { border-radius: 3px; }
+.story .w.beyond { text-decoration: underline dotted var(--beyond); text-decoration-thickness: 2px; text-underline-offset: 5px; cursor: pointer; }
+.story .w.beyond:hover, .story .w.active { background: var(--hl-beyond); }
+.story.bands .w { text-decoration: none; }
+.story.bands .w.bA { background: var(--hl-a); }
+.story.bands .w.bB { background: var(--hl-b); }
+.story.bands .w.bC { background: var(--hl-c); }
+.story.bands .w.beyond { background: var(--hl-beyond); }
+.story.bands .w.supp { background: var(--hl-names); }
+.story .foreign { font-style: italic; }
+.story .w:not(.beyond) { cursor: help; }
+.story .w.active { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 16px; }
+.aside { display: grid; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 76px); }
+.panel h2 { font-size: 1.05rem; font-family: var(--font-ui); font-weight: 700; letter-spacing: 0; }
+.hero-num { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.hero-num .n { font-family: var(--font-display); font-size: 2.4rem; font-weight: 600; line-height: 1; }
+.hero-num .l { color: var(--ink-2); font-size: var(--step--1); max-width: 22ch; }
+
+.stack { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; background: var(--surface); }
+.stack span { display: block; height: 100%; min-width: 3px; }
+.legend { display: grid; gap: 4px; font-size: .85rem; color: var(--ink-2); }
+.legend div { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: block; }
+.legend .num { color: var(--ink); }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: var(--surface-2); gap: 2px; flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: .82rem; font-weight: 700; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.seg button:disabled { opacity: .45; cursor: not-allowed; }
+.ctl { display: grid; gap: 6px; }
+.ctl > label, .ctl > .lbl { font-size: .8rem; font-weight: 700; color: var(--ink-2); }
+.hint { font-size: .78rem; color: var(--muted); margin: 0; }
+
+table.bands { width: 100%; border-collapse: collapse; font-size: .82rem; }
+table.bands th, table.bands td { padding: 4px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+table.bands th:first-child, table.bands td:first-child { text-align: left; }
+table.bands thead th { color: var(--muted); font-weight: 700; font-family: var(--font-ui); }
+table.bands td { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+table.bands tr.cut td { border-bottom: 2px solid var(--ink-2); }
+table.bands tr.out td { color: var(--muted); }
+
+.after-story { display: grid; gap: 22px; max-width: 64ch; margin-top: 18px; }
+.after-story h2 { font-size: var(--step-2); }
+dl.gloss { margin: 0; display: grid; gap: 10px; }
+dl.gloss div { display: grid; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+dl.gloss dt { font-weight: 700; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+dl.gloss dt .num { font-size: .72rem; color: var(--muted); font-weight: 400; }
+dl.gloss dd { margin: 0; color: var(--ink-2); }
+.quiz { display: grid; gap: 18px; }
+.quiz fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.quiz legend { font-weight: 700; margin-bottom: 4px; padding: 0; }
+.opt { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 9px 12px; cursor: pointer; display: flex; gap: 10px; align-items: center; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { cursor: default; }
+.opt .mark { width: 18px; flex: none; font-weight: 700; text-align: center; }
+.opt.right { border-color: var(--good); }
+.opt.right .mark { color: var(--good-ink); }
+.opt.wrong { border-color: var(--crit); }
+.opt.wrong .mark { color: var(--crit-ink); }
+.feedback { font-size: .88rem; color: var(--ink-2); min-height: 1.2em; margin: 0; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: .88rem; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* Popover & tooltip */
+.pop {
+  position: fixed; z-index: 50; width: min(320px, calc(100vw - 32px)); background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); padding: 14px 16px; display: grid; gap: 6px;
+}
+.pop .pw { font-family: var(--font-read); font-size: 1.25rem; font-weight: 600; }
+.pop .pf { font-size: .82rem; color: var(--ink-2); }
+.pop .pd { margin: 0; }
+.pop .close { position: absolute; top: 6px; right: 8px; border: 0; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--muted); }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); width: fit-content; }
+.tip { position: fixed; z-index: 60; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .8rem; padding: 6px 9px; border-radius: 6px; max-width: 260px; }
+
+/* Profiler */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.pf-input { display: grid; gap: 14px; }
+textarea#pf-text { width: 100%; min-height: 300px; resize: vertical; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px; font-family: var(--font-read); font-size: 1rem; line-height: 1.6; }
+.row { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; }
+select, input[type="text"] { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 10px; min-width: 0; }
+input[type="text"] { width: 100%; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; color: var(--ink-2); }
+.check input { margin-top: 3px; }
+.verdict { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: .85rem; border: 1.5px solid; }
+.verdict.good { border-color: var(--good); color: var(--good-ink); }
+.verdict.warn { border-color: var(--warn); color: var(--warn-ink); }
+.verdict.crit { border-color: var(--crit); color: var(--crit-ink); }
+.verdict .ic { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; font-size: .72rem; color: #fff; }
+.verdict.good .ic { background: var(--good); }
+.verdict.warn .ic { background: var(--warn); color: #3a2800; }
+.verdict.crit .ic { background: var(--crit); }
+.chart-box { overflow-x: auto; }
+.chart-box svg { display: block; width: 100%; height: auto; min-width: 420px; }
+.chart-box text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+.wordlist { display: flex; flex-wrap: wrap; gap: 6px; }
+.wordlist span { border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-size: .85rem; background: var(--surface); }
+.wordlist span b { font-family: var(--font-data); font-weight: 500; font-size: .72rem; color: var(--muted); margin-left: 6px; }
+.preview { font-family: var(--font-read); line-height: 1.7; max-height: 340px; overflow: auto; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.preview p { margin: 0 0 .8em; }
+.preview .w.beyond { background: var(--hl-beyond); border-radius: 3px; }
+.preview .w.supp { background: var(--hl-names); border-radius: 3px; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.kpis div { display: grid; gap: 2px; }
+.kpis .v { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; line-height: 1.1; }
+.kpis .k { font-size: .78rem; color: var(--muted); }
+
+/* Method */
+.prose { max-width: 70ch; display: grid; gap: 14px; }
+.prose h2 { font-size: var(--step-2); margin-top: 14px; }
+.prose p, .prose li { color: var(--ink-2); }
+.prose p { margin: 0; }
+.prose ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table.levels { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 560px; }
+table.levels th, table.levels td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.levels th { font-size: .78rem; color: var(--muted); }
+table.levels tr:last-child td { border-bottom: 0; }
+.refs li { font-size: .9rem; }
+
+footer { border-top: 1px solid var(--line); padding-block: 20px 28px; color: var(--muted); font-size: .82rem; }
+footer p { margin: 0 0 6px; max-width: 90ch; }
+footer .copyright { color: var(--ink-2); font-weight: 700; }
+
+/* Study mode (study.js): sign-in, timed reading flow, ratings and reading tests */
+.study-mode .stamp, .study-mode .aside, .study-mode .after-story,
+.study-mode .tabs a[data-tab="profiler"], .study-mode .tabs a[data-tab="method"] { display: none; }
+.study-mode .reader-grid, .study-mode .reader-head { grid-template-columns: minmax(0, 1fr); }
+.study-mode .story .w:not(.beyond) { cursor: auto; }
+.s-locked { overflow: hidden; }
+.s-overlay { position: fixed; inset: 0; z-index: 80; background: var(--bg); display: grid; place-items: center; padding: 24px 16px; overflow-y: auto; }
+.s-dialog { width: min(460px, 100%); display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 24px; box-shadow: var(--shadow); }
+.s-dialog h2 { font-size: var(--step-3); line-height: 1.15; }
+.s-dialog p { margin: 0; color: var(--ink-2); }
+.s-dialog label { font-weight: 700; font-size: .88rem; margin-top: 4px; }
+.s-dialog input { font-family: var(--font-data); font-size: 1.3rem; letter-spacing: .08em; text-transform: uppercase; padding: 10px 12px; }
+.s-err { color: var(--crit-ink); font-size: .88rem; min-height: 1.3em; }
+.btn.big { padding: 11px 20px; font-size: 1rem; }
+a.btn { text-decoration: none; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.s-badge { position: relative; margin-left: auto; }
+.s-who { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 5px 12px; font-weight: 700; font-size: var(--step--1); cursor: pointer; }
+.s-who .num { font-weight: 400; color: var(--ink-2); }
+.s-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); flex: none; }
+.s-dot.wait { background: var(--warn); }
+.s-menu { position: absolute; right: 0; top: calc(100% + 8px); width: min(300px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); padding: 14px 16px; display: grid; gap: 8px; z-index: 30; }
+.s-menu p { margin: 0; }
+.s-banner { margin: 0 0 18px; padding: 10px 14px; border: 1.5px solid var(--warn); border-radius: 8px; color: var(--warn-ink); background: var(--surface); font-size: .9rem; font-weight: 700; }
+.s-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; display: grid; gap: 12px; box-shadow: var(--shadow); max-width: 64ch; }
+.s-card h2 { font-size: var(--step-2); }
+.s-card ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; color: var(--ink-2); }
+.s-card .row, .s-done .row, .s-rate .row { align-items: center; }
+.s-finish { max-width: 64ch; margin-top: 18px; padding: 18px 20px; border: 1.5px dashed var(--accent); border-radius: var(--radius); display: grid; gap: 10px; justify-items: start; background: var(--accent-soft); }
+.s-finish p { margin: 0; font-weight: 700; }
+.s-flow { max-width: 64ch; display: grid; gap: 30px; margin-top: 8px; }
+.s-quiz, .s-rate, .s-done { display: grid; gap: 12px; }
+.s-quiz h2, .s-rate h2, .s-done h2 { font-size: var(--step-2); }
+.s-quiz .hint, .s-test-q .hint { font-size: .88rem; }
+.s-scale { display: grid; gap: 8px; }
+.s-scale .lbl { margin: 0; font-weight: 700; }
+.s-five { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.s-five button { display: grid; gap: 2px; justify-items: center; align-content: start; text-align: center; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 4px; cursor: pointer; font-size: .78rem; color: var(--ink-2); line-height: 1.2; }
+.s-five button b { font-size: 1.15rem; color: var(--ink); font-weight: 500; }
+.s-five button:hover { border-color: var(--accent); }
+.s-five button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.s-five button[aria-pressed="true"] b { color: var(--accent-ink); }
+.opt.chosen { border-color: var(--accent); background: var(--accent-soft); }
+.opt.chosen .mark { color: var(--accent); }
+.s-done p { margin: 0; color: var(--ink-2); font-size: 1.05rem; }
+.s-test-card { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between; padding: 18px 22px; border-radius: var(--radius); border: 2px solid var(--accent); background: var(--accent-soft); }
+.s-test-card h2 { font-size: var(--step-2); margin-top: 4px; }
+.s-test-card p { margin: 4px 0 0; color: var(--ink-2); }
+.s-note { margin: 0; font-weight: 700; color: var(--good-ink); }
+.s-warnline { margin: 0; color: var(--warn-ink); font-weight: 700; font-size: .9rem; }
+.s-test-read, .s-test-q { display: grid; gap: 16px; max-width: 64ch; }
+.s-test-read h1, .s-test-q h1 { font-size: var(--step-4); line-height: 1.1; }
+.s-test-read .s-finish { margin-top: 0; }
+.s-timer { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 40; font-family: var(--font-data); font-size: .95rem; background: var(--ink); color: var(--bg); border-radius: 999px; padding: 6px 12px; box-shadow: var(--shadow); }
+.readmark { color: var(--good-ink); font-weight: 700; }
+@media (max-width: 560px) { .s-five button span { font-size: .68rem; } .s-dialog { padding: 22px 18px; } }
+
+@media (max-width: 960px) {
+  .reader-grid { grid-template-columns: minmax(0, 1fr); }
+  .aside { position: static; order: -1; }
+  .pf-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .reader-head { grid-template-columns: 1fr; }
+  .stamp { justify-self: start; }
+  .story { font-size: 1.08rem; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .shelf-head .kind { margin-left: 0; }
+  .masthead { position: static; }
+  .wordmark small { display: none; }
+}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <a class="wordmark" href="#library"><b>The <span>98%</span> Library</b><small>by Tuan Bui</small></a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#library" data-tab="library">Library</a>
+      <a href="#genres" data-tab="genres">Genres</a>
+      <a href="#profiler" data-tab="profiler">Profiler</a>
+      <a href="#method" data-tab="method">How it’s graded</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section data-view="library" id="view-library">
+    <div class="intro">
+      <span class="eyebrow" id="lib-eyebrow">BNC/COCA word families · 8 levels</span>
+      <h1>The 98% Library</h1>
+      <p>This graded reader library was created by <a id="author-name" href="https://scholar.google.com/citations?user=PBwEZ7kAAAAJ&amp;hl=vi" target="_blank" rel="noopener">Dr Tuan Bui</a> as part of his ongoing research. For permission to use the readers, or for any enquiries, please contact <a href="mailto:tuanbn@hanu.edu.vn">tuanbn@hanu.edu.vn</a>. Thank you.</p>
+      <div class="factline"><span>Levels 1–3: high-frequency vocabulary (K1–K3)</span><span>Levels 4–8: mid-frequency vocabulary (K4–K8)</span><span>Target: ≥ 98% coverage at every level</span></div>
+    </div>
+    <div class="levelbar" id="level-filter" role="group" aria-label="Filter by level"></div>
+    <div id="shelves" class="shelf-list" style="display:grid;gap:34px"></div>
+  </section>
+
+  <section data-view="reader" id="view-reader" hidden>
+    <a class="backlink" href="#library">← All readers</a>
+    <div class="reader-head">
+      <div>
+        <div class="levtag" id="r-levtag"></div>
+        <h1 id="r-title"></h1>
+        <p class="blurb" id="r-blurb"></p>
+      </div>
+      <div class="stamp" id="r-stamp" aria-hidden="true"></div>
+    </div>
+    <figure class="ill" id="r-ill"></figure>
+    <div class="reader-grid">
+      <div>
+        <article class="story" id="r-story" aria-live="off"></article>
+        <p class="wc" id="r-wc"></p>
+        <div class="after-story">
+          <section id="r-gloss-sec">
+            <h2>Glossary</h2>
+            <p class="hint" id="r-gloss-note" style="margin:6px 0 12px"></p>
+            <dl class="gloss" id="r-gloss"></dl>
+          </section>
+          <section>
+            <h2>Check your understanding</h2>
+            <div class="quiz" id="r-quiz" style="margin-top:12px"></div>
+          </section>
+          <div class="row">
+            <button class="btn" id="r-copy" type="button">Copy story text</button>
+            <button class="btn" id="r-profile" type="button">Open in profiler</button>
+          </div>
+        </div>
+      </div>
+      <aside class="aside" aria-label="Coverage profile">
+        <div class="panel">
+          <h2>Coverage profile</h2>
+          <div class="hero-num"><span class="n" id="r-cov"></span><span class="l" id="r-cov-label"></span></div>
+          <div class="stack" id="r-stack" role="img"></div>
+          <div class="legend" id="r-legend"></div>
+          <div class="ctl">
+            <span class="lbl" id="unit-lbl">Counting unit</span>
+            <div class="seg" role="group" aria-labelledby="unit-lbl">
+              <button type="button" id="r-unit-l6" data-unit="L6" aria-pressed="true">Level 6 families</button>
+              <button type="button" id="r-unit-l3p" data-unit="L3P" aria-pressed="false">Level 3 partial</button>
+            </div>
+            <p class="hint" id="r-unit-note"></p>
+          </div>
+          <div class="ctl">
+            <span class="lbl" id="view-lbl">Marking</span>
+            <div class="seg" role="group" aria-labelledby="view-lbl">
+              <button type="button" id="r-view-level" data-mode="level" aria-pressed="true">Beyond level</button>
+              <button type="button" id="r-view-bands" data-mode="bands" aria-pressed="false">All bands</button>
+            </div>
+            <div class="legend" id="r-mark-legend"></div>
+          </div>
+          <details id="r-details">
+            <summary style="cursor:pointer;font-weight:700;font-size:.85rem">Band-by-band table</summary>
+            <div style="overflow-x:auto;margin-top:8px"><table class="bands" id="r-table"></table></div>
+          </details>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section data-view="genres" id="view-genres" hidden>
+    <div class="intro">
+      <span class="eyebrow">Genres</span>
+      <h1>Find a story by genre</h1>
+      <p>The same readers, grouped by kind of text. Pick a genre, then narrow it to the levels that suit your learners.</p>
+    </div>
+    <div class="genre-nav" id="genre-nav" role="group" aria-label="Choose a genre"></div>
+    <div class="levelbar" id="genre-level" role="group" aria-label="Filter by level"></div>
+    <div id="genre-list" style="display:grid;gap:34px"></div>
+  </section>
+
+  <section data-view="profiler" id="view-profiler" hidden>
+    <div class="intro">
+      <span class="eyebrow">Lexical profiler</span>
+      <h1>Check any text against the BNC/COCA lists</h1>
+      <p>Paste a text to see what percentage of its running words fall within a target number of word families, how many families a reader would need for 98% coverage, and which words to gloss or replace. The count uses the same lists and rules as the library.</p>
+    </div>
+    <div class="pf-grid">
+      <div class="pf-input">
+        <div class="row">
+          <div class="ctl"><label for="pf-load">Start from</label>
+            <select id="pf-load"><option value="">Choose a text…</option><option value="darwin">Sample: Darwin, On the Origin of Species (1859), unadapted</option><option value="alice">Sample: Alice in Wonderland (1865), unadapted</option></select>
+          </div>
+          <button class="btn" id="pf-clear" type="button">Clear</button>
+        </div>
+        <label class="sr-only" for="pf-text">Text to profile</label>
+        <textarea id="pf-text" spellcheck="false"></textarea>
+        <div class="row">
+          <div class="ctl"><label for="pf-level">Target level</label><select id="pf-level"></select></div>
+          <div class="ctl">
+            <span class="lbl" id="pf-unit-lbl">Counting unit</span>
+            <div class="seg" role="group" aria-labelledby="pf-unit-lbl">
+              <button type="button" id="pf-unit-l6" data-unit="L6" aria-pressed="true">Level 6 families</button>
+              <button type="button" id="pf-unit-l3p" data-unit="L3P" aria-pressed="false">Level 3 partial</button>
+            </div>
+          </div>
+        </div>
+        <div class="ctl"><label for="pf-names">Names in the text (comma-separated, counted as known)</label><input type="text" id="pf-names" placeholder="e.g. Mai, Hanoi, Mrs Lee"></div>
+        <label class="check"><input type="checkbox" id="pf-auto" checked> <span>Count capitalised words that are in no list as proper nouns</span></label>
+        <p class="hint" id="pf-unit-note"></p>
+      </div>
+      <div class="panel" id="pf-results" aria-live="polite">
+        <div class="hero-num"><span class="n" id="pf-cov">–</span><span class="l" id="pf-cov-label"></span></div>
+        <div id="pf-verdict"></div>
+        <div class="kpis">
+          <div><span class="v num" id="pf-tokens">–</span><span class="k">running words</span></div>
+          <div><span class="v num" id="pf-k98">–</span><span class="k">families for 98%</span></div>
+          <div><span class="v num" id="pf-k95">–</span><span class="k">families for 95%</span></div>
+        </div>
+        <div>
+          <h2 style="font-size:1rem;font-family:var(--font-ui);font-weight:700">Cumulative coverage by 1,000-family band</h2>
+          <p class="hint">Names and other supplementary-list words count as known from K1 onward.</p>
+        </div>
+        <div class="chart-box" id="pf-chart"></div>
+        <details><summary style="cursor:pointer;font-weight:700;font-size:.85rem">Table view</summary><div style="overflow-x:auto;margin-top:8px"><table class="bands" id="pf-table"></table></div></details>
+        <div class="ctl"><span class="lbl">Words beyond the target level, most frequent first</span><div class="wordlist" id="pf-beyond"></div></div>
+      </div>
+    </div>
+    <div class="ctl"><span class="lbl">Marked text <span class="hint" style="display:inline">· orange: beyond target level · green: names and supplementary lists</span></span><div class="preview" id="pf-preview"></div></div>
+  </section>
+
+  <section data-view="method" id="view-method" hidden>
+    <div class="prose">
+      <span class="eyebrow">Method</span>
+      <h1 style="font-size:var(--step-4)">How the readers are graded</h1>
+      <p>Every reader in this library was written for one level and then checked with a lexical profiler against Paul Nation’s BNC/COCA word family lists. A reader is published only if at least 98% of its running words (tokens) belong to families within its level, with names and the supplementary lists counted as known, and every family beyond the level appears in its glossary.</p>
+
+      <h2>The word lists</h2>
+      <p>The BNC/COCA lists (Nation, 2017, Version 1.0.0) contain 25 lists of 1,000 word families ranked by frequency and range, plus four supplementary lists: proper names, marginal words (exclamations, swear words, letters of the alphabet), transparent compounds, and acronyms. The first two 1,000 lists come from a 10-million-word corpus that is 60% spoken English, which brings everyday words like <i>hello</i>, <i>dad</i> and <i>station</i> into the first 1,000. The 3rd 1,000 onward come from combined BNC and COCA rankings.</p>
+      <p>Families follow Bauer and Nation’s (1993) Level 6: a headword plus its inflections and derived forms built with affixes from Levels 2–6, so <i>happy</i>, <i>happily</i>, <i>happiness</i> and <i>unhappy</i> form one family. For readers at K1–K3 the library also reports coverage with Nation’s Level 3 partial lists, which keep only inflections and four transparent affixes (<i>un-</i>, <i>-ly</i>, <i>-er</i>, ordinal <i>-th</i>). That unit is closer to what beginners can recognise, and it gives a second, stricter check.</p>
+
+      <h2>The levels</h2>
+      <div class="tbl-wrap"><table class="levels" id="m-levels"></table></div>
+      <p>Each level adds one 1,000-family band. Levels 1–3 cover the high-frequency vocabulary that graded readers traditionally teach. Levels 4–8 move into mid-frequency vocabulary, in the spirit of Nation and Anthony’s (2013) mid-frequency readers, so that learners can keep reading with 98% coverage while they build their vocabulary towards the 8,000–9,000 families needed for unadapted text.</p>
+      <p>Glossaries list every word family beyond the level under Level 6 counting. The word count at the end of each story is a conventional count, where contractions and hyphenated words count as one word. The coverage profile counts running words the way Range does, so <i>don’t</i> is two words there.</p>
+
+      <h2>Why 98%</h2>
+      <p>Hu and Nation (2000) found that most learners needed about 98% known words to read fiction with adequate comprehension without help, which is one unknown word in fifty. Laufer (1989) proposed 95% as a minimum, and Schmitt, Jiang and Grabe (2011) found that comprehension rises steadily with coverage, with 98% a reasonable target for comfortable reading. Nation (2006) estimated that 8,000–9,000 families give 98% coverage of written text, which is why unadapted texts are so hard for most learners and why graded and mid-frequency readers are needed.</p>
+
+      <h2>Counting rules</h2>
+      <ul>
+        <li>A word is a run of letters, as in Range and AntWordProfiler. Apostrophes and hyphens split words: <i>don’t</i> becomes <i>don</i> + <i>t</i>, both listed in the 1st 1,000. Numbers written as digits are not counted.</li>
+        <li>Accents are ignored when matching (<i>café</i> matches <i>cafe</i>).</li>
+        <li>Words in the four supplementary lists count as known. So do each story’s own character and place names when they are capitalised.</li>
+        <li>Short phrases in another language, such as the Vietnamese and Māori lines in two stories, are shown in italics and left out of the count.</li>
+        <li>A word form that appears in more than one family is assigned to the most frequent one. The lists count forms, not senses, so homographs such as <i>left</i> (direction, past of <i>leave</i>) share a band.</li>
+        <li>Coverage measures vocabulary only. It does not capture grammar, background knowledge or the difficulty of the ideas, which were controlled by writing to each level.</li>
+      </ul>
+
+      <h2>References</h2>
+      <ul class="refs">
+        <li>Bauer, L., &amp; Nation, I. S. P. (1993). Word families. <i>International Journal of Lexicography, 6</i>(4), 253–279.</li>
+        <li>Hu, M., &amp; Nation, I. S. P. (2000). Unknown vocabulary density and reading comprehension. <i>Reading in a Foreign Language, 13</i>(1), 403–430.</li>
+        <li>Laufer, B. (1989). What percentage of text-lexis is essential for comprehension? In C. Lauren &amp; M. Nordman (Eds.), <i>Special language: From humans thinking to thinking machines</i> (pp. 316–323). Multilingual Matters.</li>
+        <li>Nation, I. S. P. (2006). How large a vocabulary is needed for reading and listening? <i>The Canadian Modern Language Review, 63</i>(1), 59–82.</li>
+        <li>Nation, I. S. P. (2016). <i>Making and using word lists for language learning and testing</i>. John Benjamins.</li>
+        <li>Nation, I. S. P. (2017). <i>The BNC/COCA Level 6 word family lists</i> (Version 1.0.0) [Data file]. Victoria University of Wellington.</li>
+        <li>Nation, I. S. P. (2017). <i>The BNC/COCA Level 3 partial word family lists</i> (Version 1.0.0) [Data file]. Victoria University of Wellington.</li>
+        <li>Nation, P., &amp; Anthony, L. (2013). Mid-frequency readers. <i>Journal of Extensive Reading, 1</i>, 5–16.</li>
+        <li>Schmitt, N., Jiang, X., &amp; Grabe, W. (2011). The percentage of words known in a text and reading comprehension. <i>The Modern Language Journal, 95</i>(1), 26–43.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="copyright">© 2026 Tuan Bui. All rights reserved.</p>
+    <p>Word lists: Paul Nation’s BNC/COCA Level 6 and Level 3 partial word family lists, from his resources page at Victoria University of Wellington. All stories, glosses and questions were written for this library.</p>
+    <p id="foot-stats"></p>
+  </div>
+</footer>
+
+<div class="pop" id="pop" hidden role="dialog" aria-label="Word information"></div>
+<div class="tip" id="tip" hidden></div>
+<textarea id="copy-buf" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
+
+<script src="config.js"></script>
+<script src="lexicon.js"></script>
+<script src="stories.js"></script>
+<script src="tests.js"></script>
+<script src="study.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('98lib:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('98lib:' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
+  };
+
+  /* ---------- Lexicon ---------- */
+  const SUPP = ['PN', 'MW', 'TC', 'AC'];
+  const SUPP_NAME = { PN: 'Proper noun', MW: 'Marginal word', TC: 'Transparent compound', AC: 'Acronym' };
+  const ORDER = { L6: [...Array(25)].map((_, i) => String(i + 1)).concat(SUPP), L3P: ['1', '2', '3'].concat(SUPP) };
+  const LEX = {};
+  for (const unit of ['L6', 'L3P']) {
+    const map = new Map();
+    for (const key of ORDER[unit]) {
+      const str = window.BNCCOCA[unit][key];
+      if (!str) continue;
+      const band = /^\d+$/.test(key) ? +key : key;
+      for (const fam of str.split(';')) {
+        const ms = fam.split(',');
+        for (const m of ms) if (!map.has(m)) map.set(m, [band, ms[0]]);
+      }
+    }
+    LEX[unit] = map;
+  }
+  const fold = w => w.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  function lookup(w, unit) {
+    const h = LEX[unit].get(w);
+    if (h) return h;
+    if (unit === 'L3P') {
+      const h6 = LEX.L6.get(w);
+      if (h6) return [typeof h6[0] === 'number' ? Math.max(4, h6[0]) : h6[0], h6[1]];
+    }
+    return ['OFF', null];
+  }
+  const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
+  const bandLong = b => typeof b === 'number' ? `K${b} · ${ordinal(b)} 1,000 families` : b === 'OFF' ? 'Not in any list' : SUPP_NAME[b];
+  const kr = k => k === 1 ? 'K1' : `K1–K${k}`;
+  const fmtPct = (x, d = 1) => (Math.floor(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d) + '%';
+
+  /* ---------- Analysis (mirrors the Python profiler used to grade the readers) ---------- */
+  function analyse(paragraphs, { cutoff, unit = 'L6', names = [], autoNames = false }) {
+    const nameSet = new Set();
+    names.forEach(n => (n.match(/\p{L}+/gu) || []).forEach(p => nameSet.add(fold(p))));
+    const tokens = [], paras = [];
+    const bands = {}; const beyond = new Map(); const fams = new Set(); const types = new Set();
+    let total = 0, known = 0;
+    for (const text of paragraphs) {
+      const segs = [];
+      for (const part of text.split(/(\[\[[\s\S]*?\]\])/)) {
+        if (part.startsWith('[[') && part.endsWith(']]')) { segs.push({ t: 'foreign', s: part.slice(2, -2) }); continue; }
+        let last = 0;
+        for (const m of part.matchAll(/\p{L}+/gu)) {
+          if (m.index > last) segs.push({ t: 'text', s: part.slice(last, m.index) });
+          last = m.index + m[0].length;
+          const surf = m[0], w = fold(surf);
+          let [band, head] = lookup(w, unit);
+          const cap = surf[0] !== surf[0].toLowerCase();
+          if (nameSet.has(w) && cap && band !== 'MW') { band = 'PN'; head = w; }
+          else if (autoNames && cap && band === 'OFF') { band = 'PN'; head = w; }
+          const isKnown = SUPP.includes(band) || (typeof band === 'number' && band <= cutoff);
+          total++; if (isKnown) known++;
+          bands[band] = (bands[band] || 0) + 1;
+          types.add(w);
+          if (typeof band === 'number') fams.add(head);
+          if (!isKnown) {
+            const key = head || w;
+            const e = beyond.get(key) || { head: key, band, count: 0, forms: new Set() };
+            e.count++; e.forms.add(w); beyond.set(key, e);
+          }
+          const tok = { surf, w, band, head, known: isKnown };
+          tokens.push(tok);
+          segs.push({ t: 'word', s: surf, i: tokens.length - 1 });
+        }
+        if (last < part.length) segs.push({ t: 'text', s: part.slice(last) });
+      }
+      paras.push(segs);
+    }
+    const supp = SUPP.reduce((a, b) => a + (bands[b] || 0), 0);
+    const maxBand = Math.max(1, ...Object.keys(bands).filter(k => /^\d+$/.test(k)).map(Number));
+    const cum = [];
+    let run = supp;
+    for (let k = 1; k <= 25; k++) { run += bands[k] || 0; cum.push({ k, pct: total ? 100 * run / total : 0, add: bands[k] || 0 }); }
+    const reach = t => { const c = cum.find(c => c.pct >= t - 1e-9); return c ? c.k : null; };
+    return { tokens, paras, bands, beyond, total, known, coverage: total ? 100 * known / total : 0, supp,
+      families: fams.size, types: types.size, cum, k98: reach(98), k95: reach(95), maxBand, off: bands.OFF || 0 };
+  }
+
+  function smart(s) {
+    return s.replace(/(^|[\s(\[—–-])"/g, '$1“').replace(/"/g, '”').replace(/(^|[\s(\[—–-])'/g, '$1‘').replace(/'/g, '’');
+  }
+
+  function renderParas(res, cutoff, gloss) {
+    return res.paras.map(segs => '<p>' + segs.map(sg => {
+      if (sg.t === 'text') return esc(sg.s);
+      if (sg.t === 'foreign') return `<i class="foreign" lang="und">${esc(sg.s)}</i>`;
+      const tk = res.tokens[sg.i];
+      let cls = 'w';
+      if (!tk.known) cls += ' beyond';
+      else if (SUPP.includes(tk.band)) cls += ' supp';
+      else if (tk.band >= 2) cls += tk.band === cutoff && cutoff > 1 ? ' bC' : (tk.band >= Math.max(2, cutoff - 1) ? ' bB' : ' bA');
+      const g = !tk.known ? ' tabindex="0" role="button"' : '';
+      return `<span class="${cls}" data-i="${sg.i}"${g}>${esc(sg.s)}</span>`;
+    }).join('') + '</p>').join('');
+  }
+
+  /* ---------- Data ---------- */
+  const STORIES = window.STORIES;
+  const LEVELS = {};
+  for (let l = 1; l <= 8; l++) LEVELS[l] = { k: l, kind: l <= 3 ? 'High-frequency' : 'Mid-frequency', size: (l * 1000).toLocaleString('en') };
+  const GENRES = [
+    ['Fiction', ['Everyday life', 'Humour', 'Mystery', 'Adventure', 'Science fiction', 'Historical', 'Folk tale']],
+    ['Non-fiction', ['Science & nature', 'People', 'History', 'Society & culture', 'Health', 'Language']]
+  ];
+  const lvColor = l => `var(--lv${l})`;
+  const prepared = new Map();
+  for (const s of STORIES) {
+    const paras = s.paragraphs.map(smart);
+    const r6 = analyse(paras, { cutoff: s.cutoff, unit: 'L6', names: s.names });
+    const r3 = s.cutoff <= 3 ? analyse(paras, { cutoff: s.cutoff, unit: 'L3P', names: s.names }) : null;
+    prepared.set(s.id, { s, paras, r6, r3 });
+  }
+
+  /* ---------- Study mode (config.js + study.js) ---------- */
+  const CFG = Object.assign({ studyMode: false, logUrl: '', logKey: '', validCodes: [], currentTestPoint: null, showTimer: false,
+    hideTextDuringQuiz: true, showReadingFeedback: true, showTestResults: false, pauseSeconds: 60 }, window.LIBRARY_CONFIG || {});
+  const study = CFG.studyMode && typeof window.LibraryStudy === 'function'
+    ? window.LibraryStudy({ $, esc, store, CFG, prepared, smart,
+      refreshLibrary: () => { renderLibrary(); $('#genre-list').innerHTML = ''; }, reroute: () => route() })
+    : null;
+
+  /* ---------- Library ---------- */
+  let levelFilter = store.get('level', 0);
+  let svgSeq = 0;
+  // Each inline copy of an illustration needs its own gradient/filter ids, or copies in hidden views break the visible one.
+  const art = s => s.svg ? s.svg.split(s.id + '-').join(`${s.id}-i${++svgSeq}-`) : '';
+  function bookCard(s) {
+    const p = prepared.get(s.id), L = LEVELS[s.level];
+    return `<a class="book" href="#${s.id}">
+          <div class="thumb" aria-hidden="true">${art(s)}</div>
+          <div class="book-top"><span class="levtag"><i class="swatch" style="background:${lvColor(s.level)}"></i>L${s.level} · K${L.k}</span><span class="genre">${esc(s.subgenre || s.category)}</span></div>
+          <h3>${esc(s.title)}</h3>
+          <p>${esc(s.blurb)}</p>
+          <div class="book-meta"><span><strong class="num">${s.word_count.toLocaleString('en')}</strong> words</span><span><strong class="num">${fmtPct(p.r6.coverage)}</strong> at K${L.k}</span><span><strong class="num">${s.quiz.length}</strong> questions</span>${study ? study.cardMark(s.id) : ''}</div>
+        </a>`;
+  }
+  function renderLibrary() {
+    const lf = $('#level-filter');
+    lf.innerHTML = [`<button class="chip" type="button" data-l="0" aria-pressed="${levelFilter === 0}">All levels</button>`]
+      .concat(Object.entries(LEVELS).map(([l, L]) => `<button class="chip" type="button" data-l="${l}" aria-pressed="${levelFilter === +l}"><i class="swatch" style="background:${lvColor(l)}"></i>Level ${l} · K${L.k}</button>`)).join('');
+    const shelves = Object.entries(LEVELS).filter(([l]) => !levelFilter || +l === levelFilter).map(([l, L]) => {
+      const list = STORIES.filter(s => s.level === +l);
+      const books = list.length ? `<div class="books">${list.map(bookCard).join('')}</div>` : `<p class="soon">The Level ${l} readers are being written and checked against the K${L.k} lists.</p>`;
+      return `<section class="shelf" aria-labelledby="shelf-${l}">
+        <div class="shelf-head"><h2 id="shelf-${l}"><i class="swatch" style="background:${lvColor(l)}"></i>Level ${l}</h2>
+        <p>K${L.k} · the first ${L.size} word families · ${list.length} ${list.length === 1 ? 'story' : 'stories'}</p><p class="kind eyebrow">${L.kind}</p></div>
+        ${books}</section>`;
+    }).join('');
+    $('#shelves').innerHTML = shelves;
+  }
+  $('#level-filter').addEventListener('click', e => {
+    const b = e.target.closest('[data-l]'); if (!b) return;
+    levelFilter = +b.dataset.l; store.set('level', levelFilter); renderLibrary();
+  });
+
+  /* ---------- Reader ---------- */
+  let current = null; let readerUnit = 'L6'; let readerMode = study ? 'level' : store.get('mode', 'level');
+  function openReader(id) {
+    const p = prepared.get(id); if (!p) return false;
+    current = p; if (!p.r3) readerUnit = 'L6';
+    const s = p.s, L = LEVELS[s.level];
+    $('#r-levtag').innerHTML = `<i class="swatch" style="background:${lvColor(s.level)}"></i>Level ${s.level} · K${L.k} · ${esc(s.genre)}`;
+    $('#r-title').textContent = s.title;
+    $('#r-blurb').textContent = s.blurb;
+    $('#r-ill').innerHTML = art(s);
+    $('#r-ill').hidden = !s.svg;
+    $('#r-wc').textContent = `Word count: ${s.word_count.toLocaleString('en')}`;
+    renderGloss(); renderQuiz(); renderReaderBody();
+    document.title = s.title + ' · The 98% Library';
+    if (study) study.openStory(p);
+    return true;
+  }
+  function renderReaderBody() {
+    const p = current, s = p.s, k = s.cutoff;
+    const r = readerUnit === 'L3P' && p.r3 ? p.r3 : p.r6;
+    const story = $('#r-story');
+    story.innerHTML = renderParas(r, k);
+    story.classList.toggle('bands', readerMode === 'bands');
+    $('#r-stamp').innerHTML = `<span class="small">Coverage at K${k}</span><span class="big">${fmtPct(r.coverage, 2)}</span><span class="small">${readerUnit === 'L6' ? 'Level 6 families' : 'Level 3 partial'}</span>`;
+    $('#r-cov').textContent = fmtPct(r.coverage, 2);
+    $('#r-cov-label').textContent = `of ${r.total} running words are in ${kr(k)} families or are names`;
+    const within = r.known - r.supp, out = r.total - r.known;
+    const parts = [
+      { lab: `Within ${kr(k)}`, n: within, c: 'var(--within)' },
+      { lab: 'Names and supplementary lists', n: r.supp, c: 'var(--names)' },
+      { lab: `Beyond K${k}${readerUnit === 'L6' ? ' (glossed)' : ''}`, n: out, c: 'var(--beyond)' }
+    ];
+    $('#r-stack').setAttribute('aria-label', parts.map(x => `${x.lab}: ${x.n}`).join('; '));
+    $('#r-stack').innerHTML = parts.filter(x => x.n > 0).map(x => `<span style="width:${100 * x.n / r.total}%;background:${x.c}" data-tip="${esc(x.lab)}: ${x.n} words (${(100 * x.n / r.total).toFixed(1)}%)"></span>`).join('');
+    $('#r-legend').innerHTML = parts.map(x => `<div><i style="background:${x.c}"></i><span>${esc(x.lab)}</span><span class="num">${x.n}</span></div>`).join('');
+    $('#r-unit-l6').setAttribute('aria-pressed', readerUnit === 'L6');
+    $('#r-unit-l3p').setAttribute('aria-pressed', readerUnit === 'L3P');
+    $('#r-unit-l3p').disabled = !p.r3;
+    $('#r-unit-note').textContent = p.r3
+      ? (readerUnit === 'L6' ? `Level 3 partial coverage: ${fmtPct(p.r3.coverage, 2)}. It counts derived forms as separate words.` : `Level 6 coverage: ${fmtPct(p.r6.coverage, 2)}. Words beyond K${k} here that are not glossed are derived forms of known families.`)
+      : 'Nation’s Level 3 partial lists stop at K3, so this reader is counted with Level 6 families only.';
+    $('#r-view-level').setAttribute('aria-pressed', readerMode === 'level');
+    $('#r-view-bands').setAttribute('aria-pressed', readerMode === 'bands');
+    const ml = [];
+    if (readerMode === 'level') ml.push(['background:transparent;border:2px dotted var(--beyond)', `Beyond K${k}: tap for the gloss`]);
+    else {
+      if (k >= 4) ml.push(['background:var(--hl-a)', k - 2 > 2 ? `K2–K${k - 2}` : 'K2']);
+      if (k >= 3) ml.push(['background:var(--hl-b)', `K${k - 1}`]);
+      if (k >= 2) ml.push(['background:var(--hl-c)', `K${k}`]);
+      ml.push(['background:var(--hl-beyond)', `Beyond K${k}`], ['background:var(--hl-names)', 'Names and supplementary lists']);
+    }
+    $('#r-mark-legend').innerHTML = ml.filter(x => x[1]).map(([st, lab]) => `<div><i style="${st}"></i><span>${esc(lab)}</span><span></span></div>`).join('') + (readerMode === 'bands' ? '<p class="hint">Unmarked words are in the 1st 1,000.</p>' : '');
+    $('#r-table').innerHTML = bandTable(r, k, 10);
+    const cnt = s.gloss.length;
+    $('#r-gloss-note').textContent = cnt ? `Every word family beyond K${k} in this reader, with its BNC/COCA band.` : `This reader has no words beyond K${k}, so it needs no glossary.`;
+    $('#r-gloss-sec').hidden = !cnt;
+  }
+  function bandTable(r, cutoff, minRows) {
+    const top = Math.max(minRows, cutoff + 1, Math.min(25, r.maxBand));
+    let rows = '';
+    for (let k = 1; k <= top; k++) {
+      const c = r.cum[k - 1];
+      rows += `<tr class="${k === cutoff ? 'cut' : ''}${k > cutoff ? ' out' : ''}"><td>K${k}</td><td>${c.add}</td><td>${(100 * c.add / (r.total || 1)).toFixed(1)}</td><td>${c.pct.toFixed(2)}</td></tr>`;
+    }
+    rows += `<tr><td>Names &amp; supp.</td><td>${r.supp}</td><td>${(100 * r.supp / (r.total || 1)).toFixed(1)}</td><td>·</td></tr>`;
+    rows += `<tr><td>Not in lists</td><td>${r.off}</td><td>${(100 * r.off / (r.total || 1)).toFixed(1)}</td><td>·</td></tr>`;
+    return `<thead><tr><th>Band</th><th>Words</th><th>%</th><th>Cum. %</th></tr></thead><tbody>${rows}</tbody>`;
+  }
+  function glossFor(tok) {
+    const s = current && current.s; if (!s) return null;
+    return s.gloss.find(g => { const gw = fold(g.word); return gw === tok.w || gw === tok.head || lookup(gw, 'L6')[1] === tok.head; }) || null;
+  }
+  function renderGloss() {
+    const s = current.s;
+    $('#r-gloss').innerHTML = s.gloss.map(g => {
+      const [band] = lookup(fold(g.word), 'L6');
+      return `<div><dt>${esc(g.word)} <span class="num">${typeof band === 'number' ? 'K' + band : band === 'OFF' ? 'not in lists' : esc(SUPP_NAME[band] || band)}</span></dt><dd>${esc(g.def)}</dd></div>`;
+    }).join('');
+  }
+  function renderQuiz() {
+    const s = current.s;
+    $('#r-quiz').innerHTML = s.quiz.map((q, qi) => `<fieldset data-q="${qi}"><legend>${qi + 1}. ${esc(q.q)}</legend>
+      ${q.options.map((o, oi) => `<button type="button" class="opt" data-o="${oi}"><span class="mark" aria-hidden="true"></span><span>${esc(o)}</span></button>`).join('')}
+      <p class="feedback" aria-live="polite"></p></fieldset>`).join('');
+  }
+  $('#r-quiz').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b) return;
+    const fs = b.closest('fieldset'); const q = current.s.quiz[+fs.dataset.q]; const o = +b.dataset.o;
+    fs.querySelectorAll('.opt').forEach((x, i) => {
+      x.disabled = true;
+      if (i === q.answer) { x.classList.add('right'); x.querySelector('.mark').textContent = '✓'; }
+      else if (i === o) { x.classList.add('wrong'); x.querySelector('.mark').textContent = '✕'; }
+    });
+    fs.querySelector('.feedback').textContent = o === q.answer ? 'Correct.' : `Not quite. The answer is: ${q.options[q.answer]}`;
+  });
+  document.querySelectorAll('#r-unit-l6, #r-unit-l3p').forEach(b => b.addEventListener('click', () => { readerUnit = b.dataset.unit; hidePop(); renderReaderBody(); }));
+  document.querySelectorAll('#r-view-level, #r-view-bands').forEach(b => b.addEventListener('click', () => { readerMode = b.dataset.mode; store.set('mode', readerMode); hidePop(); renderReaderBody(); }));
+
+  /* Word popover */
+  const pop = $('#pop'); let popAnchor = null;
+  function showPop(span) {
+    const r = readerUnit === 'L3P' && current.r3 ? current.r3 : current.r6;
+    const tok = r.tokens[+span.dataset.i];
+    const g = glossFor(tok);
+    const k = current.s.cutoff;
+    // In study mode only words beyond the level open, and the pop-up shows just the gloss. Each tap is logged.
+    if (study && tok.known) return;
+    if (study) study.glossTap(tok, g);
+    let status;
+    if (tok.band === 'PN') status = '<span class="badge" style="border-color:var(--names)">Name · counted as known</span>';
+    else if (SUPP.includes(tok.band)) status = `<span class="badge" style="border-color:var(--names)">${SUPP_NAME[tok.band]} · counted as known</span>`;
+    else if (tok.known) status = `<span class="badge" style="border-color:var(--within)">Within K${k}</span>`;
+    else status = `<span class="badge" style="border-color:var(--beyond)">Beyond K${k}${g ? ' · glossed' : ''}</span>`;
+    const fam = tok.head && tok.head !== tok.w ? `Family: <b>${esc(tok.head)}</b> · ` : '';
+    pop.innerHTML = study
+      ? `<button class="close" type="button" aria-label="Close">×</button><div class="pw">${esc(tok.surf)}</div>${g ? `<p class="pd">${esc(g.def)}</p>` : '<p class="pd hint">This word is not in the glossary.</p>'}`
+      : `<button class="close" type="button" aria-label="Close">×</button><div class="pw">${esc(tok.surf)}</div>
+      <div class="pf">${fam}${esc(bandLong(tok.band))}</div>${status}${g ? `<p class="pd">${esc(g.def)}</p>` : ''}`;
+    pop.hidden = false;
+    if (popAnchor) popAnchor.classList.remove('active');
+    popAnchor = span; span.classList.add('active');
+    const rc = span.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.min(Math.max(16, rc.left + rc.width / 2 - pw / 2), window.innerWidth - pw - 16);
+    let y = rc.bottom + 8; if (y + ph > window.innerHeight - 12) y = Math.max(12, rc.top - ph - 8);
+    pop.style.left = x + 'px'; pop.style.top = y + 'px';
+  }
+  function hidePop() { pop.hidden = true; if (popAnchor) popAnchor.classList.remove('active'); popAnchor = null; }
+  $('#r-story').addEventListener('click', e => { const w = e.target.closest('.w'); if (w) { e.stopPropagation(); showPop(w); } });
+  $('#r-story').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('w')) { e.preventDefault(); showPop(e.target); } });
+  document.addEventListener('click', e => { if (!pop.hidden && (!pop.contains(e.target) || e.target.closest('.close'))) hidePop(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') hidePop(); });
+  window.addEventListener('scroll', () => { if (!pop.hidden) hidePop(); }, { passive: true });
+
+  /* Copy & open in profiler */
+  $('#r-copy').addEventListener('click', async () => {
+    const s = current.s;
+    const text = s.title + '\n\n' + current.paras.map(p => p.replace(/\[\[|\]\]/g, '')).join('\n\n') + `\n\nWord count: ${s.word_count}`;
+    const btn = $('#r-copy');
+    try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; }
+    catch (err) { const t = $('#copy-buf'); t.value = text; t.select(); try { document.execCommand('copy'); btn.textContent = 'Copied'; } catch (e2) { btn.textContent = 'Copy failed: select the text manually'; } }
+    setTimeout(() => { btn.textContent = 'Copy story text'; }, 1800);
+  });
+  $('#r-profile').addEventListener('click', () => {
+    const s = current.s;
+    $('#pf-text').value = current.paras.join('\n\n');
+    $('#pf-names').value = s.names.join(', ');
+    pfLevel = s.cutoff; pfUnit = 'L6'; syncPfControls(); runProfiler(); store.set('pf', { text: $('#pf-text').value, names: $('#pf-names').value });
+    location.hash = 'profiler';
+  });
+
+  /* Tooltip for chart marks */
+  const tip = $('#tip');
+  document.addEventListener('mousemove', e => {
+    const t = e.target.closest && e.target.closest('[data-tip]');
+    if (!t) { tip.hidden = true; return; }
+    tip.textContent = t.dataset.tip; tip.hidden = false;
+    const x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+    tip.style.left = x + 'px'; tip.style.top = (e.clientY + 16) + 'px';
+  });
+
+  /* ---------- Profiler ---------- */
+  const ALICE = `Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, "and what is the use of a book," thought Alice "without pictures or conversations?"
+
+So she was considering in her own mind (as well as she could, for the hot day made her feel very sleepy and stupid), whether the pleasure of making a daisy-chain would be worth the trouble of getting up and picking the daisies, when suddenly a White Rabbit with pink eyes ran close by her.
+
+There was nothing so very remarkable in that; nor did Alice think it so very much out of the way to hear the Rabbit say to itself, "Oh dear! Oh dear! I shall be late!" (when she thought it over afterwards, it occurred to her that she ought to have wondered at this, but at the time it all seemed quite natural); but when the Rabbit actually took a watch out of its waistcoat-pocket, and looked at it, and then hurried on, Alice started to her feet, for it flashed across her mind that she had never before seen a rabbit with either a waistcoat-pocket, or a watch to take out of it, and burning with curiosity, she ran across the field after it, and fortunately was just in time to see it pop down a large rabbit-hole under the hedge.`;
+  const DARWIN = `When on board H.M.S. "Beagle," as naturalist, I was much struck with certain facts in the distribution of the inhabitants of South America, and in the geological relations of the present to the past inhabitants of that continent. These facts seemed to me to throw some light on the origin of species, that mystery of mysteries, as it has been called by one of our greatest philosophers.
+
+On my return home, it occurred to me, in 1837, that something might perhaps be made out on this question by patiently accumulating and reflecting on all sorts of facts which could possibly have any bearing on it. After five years' work I allowed myself to speculate on the subject, and drew up some short notes; these I enlarged in 1844 into a sketch of the conclusions, which then seemed to me probable: from that period to the present day I have steadily pursued the same object. I hope that I may be excused for entering on these personal details, as I give them to show that I have not been hasty in coming to a decision.`;
+  const SAMPLES = { alice: [ALICE, 'Alice'], darwin: [DARWIN, 'Beagle, South America'] };
+  let pfLevel = 3, pfUnit = 'L6';
+  const pfSel = $('#pf-level');
+  function syncPfControls() {
+    const maxK = pfUnit === 'L3P' ? 3 : 25;
+    if (pfLevel > maxK) pfLevel = maxK;
+    pfSel.innerHTML = [...Array(maxK)].map((_, i) => `<option value="${i + 1}"${i + 1 === pfLevel ? ' selected' : ''}>K${i + 1} · ${(i + 1).toLocaleString('en')},000 families</option>`).join('');
+    $('#pf-unit-l6').setAttribute('aria-pressed', pfUnit === 'L6');
+    $('#pf-unit-l3p').setAttribute('aria-pressed', pfUnit === 'L3P');
+    $('#pf-unit-note').textContent = pfUnit === 'L3P' ? 'Level 3 partial lists cover K1–K3. Words outside them are placed in their Level 6 band, K4 or above.' : '';
+  }
+  function runProfiler() {
+    const text = $('#pf-text').value;
+    const paras = text.split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+    const names = $('#pf-names').value.split(',').map(s => s.trim()).filter(Boolean);
+    const r = analyse(paras, { cutoff: pfLevel, unit: pfUnit, names, autoNames: $('#pf-auto').checked });
+    const k = pfLevel;
+    $('#pf-cov').textContent = r.total ? fmtPct(r.coverage, 2) : '–';
+    $('#pf-cov-label').textContent = r.total ? `of running words are in ${kr(k)} families, names or supplementary lists` : 'Paste or load a text to see its profile';
+    $('#pf-tokens').textContent = r.total || '–';
+    $('#pf-k98').textContent = r.total ? (r.k98 ? `K${r.k98}` : '>K25') : '–';
+    $('#pf-k95').textContent = r.total ? (r.k95 ? `K${r.k95}` : '>K25') : '–';
+    let v = '';
+    if (r.total) {
+      if (r.coverage >= 98) v = `<span class="verdict good"><span class="ic">✓</span>98% or more: suitable for unassisted reading at K${k}</span>`;
+      else if (r.coverage >= 95) v = `<span class="verdict warn"><span class="ic">!</span>95–98%: readable with glosses or support at K${k}</span>`;
+      else v = `<span class="verdict crit"><span class="ic">✕</span>Below 95%: too difficult for learners at K${k}</span>`;
+    }
+    $('#pf-verdict').innerHTML = v;
+    drawCumulative($('#pf-chart'), r, k);
+    $('#pf-table').innerHTML = r.total ? bandTable(r, k, 10) : '';
+    const list = [...r.beyond.values()].sort((a, b) => b.count - a.count || String(a.band).localeCompare(String(b.band)));
+    $('#pf-beyond').innerHTML = list.length ? list.slice(0, 80).map(e => `<span>${esc([...e.forms][0])}${e.count > 1 ? ' ×' + e.count : ''}<b>${typeof e.band === 'number' ? 'K' + e.band : 'off-list'}</b></span>`).join('') + (list.length > 80 ? `<span>+${list.length - 80} more</span>` : '') : `<span class="hint" style="border:0;background:none;padding:0">${r.total ? 'None. Every word is within the target level.' : '–'}</span>`;
+    $('#pf-preview').innerHTML = r.total ? renderParas(r, k) : '<p class="hint">Marked text appears here.</p>';
+  }
+  function drawCumulative(box, r, target) {
+    if (!r.total) { box.innerHTML = ''; return; }
+    const kmax = Math.min(25, Math.max(10, (r.k98 || 25) + 1, target + 1));
+    const pts = r.cum.slice(0, kmax);
+    const W = 640, H = 270, m = { l: 46, r: 58, t: 16, b: 36 };
+    const ymin = Math.max(0, Math.min(80, Math.floor((pts[0].pct - 3) / 5) * 5));
+    const x = k => m.l + (k - 1) / (kmax - 1) * (W - m.l - m.r);
+    const y = p => m.t + (100 - p) / (100 - ymin) * (H - m.t - m.b);
+    const stepY = (100 - ymin) > 30 ? 10 : 5;
+    let g = '';
+    const bw = (W - m.l - m.r) / (kmax - 1);
+    g += `<rect x="${x(target) - bw * 0.42}" y="${m.t}" width="${bw * 0.84}" height="${H - m.t - m.b}" fill="var(--accent-soft)" rx="4"/>`;
+    for (let v = ymin; v <= 100; v += stepY) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${v}%</text>`;
+    for (const ref of [95, 98]) if (ref > ymin) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(ref)}" y2="${y(ref)}" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="4 4"/><text x="${W - m.r + 6}" y="${y(ref) + 4}" style="fill:var(--ink-2)">${ref}%</text>`;
+    for (let k = 1; k <= kmax; k++) if (kmax <= 13 || k % 2 === 1 || k === target) g += `<text x="${x(k)}" y="${H - m.b + 18}" text-anchor="middle" style="${k === target ? 'fill:var(--ink);font-weight:500' : ''}">K${k}</text>`;
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}" stroke="var(--muted)" stroke-width="1"/>`;
+    g += `<path d="${pts.map((p, i) => (i ? 'L' : 'M') + x(p.k).toFixed(1) + ' ' + y(Math.max(ymin, p.pct)).toFixed(1)).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+    g += pts.map(p => `<circle cx="${x(p.k)}" cy="${y(Math.max(ymin, p.pct))}" r="${p.k === target ? 5.5 : 4}" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>`).join('');
+    const tp = pts[target - 1];
+    g += `<text x="${x(target)}" y="${y(Math.max(ymin, tp.pct)) - 12}" text-anchor="middle" style="fill:var(--ink);font-weight:500">${tp.pct.toFixed(1)}%</text>`;
+    g += pts.map(p => `<rect x="${x(p.k) - bw / 2}" y="${m.t}" width="${bw}" height="${H - m.t - m.b}" fill="transparent" data-tip="K1–K${p.k}: ${p.pct.toFixed(2)}% cumulative (+${p.add} words in K${p.k})"/>`).join('');
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Cumulative coverage reaches ${tp.pct.toFixed(1)}% at K${target}${r.k98 ? ' and 98% at K' + r.k98 : ''}">${g}</svg>`;
+  }
+  let pfTimer = null;
+  const pfSave = () => store.set('pf', { text: $('#pf-text').value, names: $('#pf-names').value, level: pfLevel, unit: pfUnit, auto: $('#pf-auto').checked });
+  $('#pf-text').addEventListener('input', () => { clearTimeout(pfTimer); pfTimer = setTimeout(() => { runProfiler(); pfSave(); }, 220); });
+  $('#pf-names').addEventListener('input', () => { clearTimeout(pfTimer); pfTimer = setTimeout(() => { runProfiler(); pfSave(); }, 220); });
+  $('#pf-auto').addEventListener('change', () => { runProfiler(); pfSave(); });
+  pfSel.addEventListener('change', () => { pfLevel = +pfSel.value; runProfiler(); pfSave(); });
+  document.querySelectorAll('#pf-unit-l6, #pf-unit-l3p').forEach(b => b.addEventListener('click', () => { pfUnit = b.dataset.unit; syncPfControls(); runProfiler(); pfSave(); }));
+  $('#pf-clear').addEventListener('click', () => { $('#pf-text').value = ''; $('#pf-names').value = ''; runProfiler(); pfSave(); $('#pf-text').focus(); });
+  const loadSel = $('#pf-load');
+  loadSel.innerHTML += STORIES.map(s => `<option value="${s.id}">Level ${s.level}: ${esc(s.title)}</option>`).join('');
+  loadSel.addEventListener('change', () => {
+    const v = loadSel.value; if (!v) return;
+    if (SAMPLES[v]) { $('#pf-text').value = SAMPLES[v][0]; $('#pf-names').value = SAMPLES[v][1]; }
+    else { const p = prepared.get(v); $('#pf-text').value = p.paras.join('\n\n'); $('#pf-names').value = p.s.names.join(', '); pfLevel = p.s.cutoff; pfUnit = 'L6'; syncPfControls(); }
+    loadSel.value = ''; runProfiler(); pfSave();
+  });
+  const saved = store.get('pf', null);
+  if (saved && saved.text) { $('#pf-text').value = saved.text; $('#pf-names').value = saved.names || ''; pfLevel = saved.level || 3; pfUnit = saved.unit || 'L6'; $('#pf-auto').checked = saved.auto !== false; }
+  else { $('#pf-text').value = DARWIN; $('#pf-names').value = 'Beagle, South America'; }
+  syncPfControls(); runProfiler();
+
+  /* ---------- Method table & footer ---------- */
+  $('#m-levels').innerHTML = `<thead><tr><th>Level</th><th>Families</th><th>Vocabulary</th><th>Stories</th><th>Word count</th><th>Coverage (Level 6)</th></tr></thead><tbody>` +
+    Object.entries(LEVELS).filter(([l]) => STORIES.some(s => s.level === +l)).map(([l, L]) => {
+      const ss = STORIES.filter(s => s.level === +l).map(s => prepared.get(s.id));
+      const words = ss.map(p => p.s.word_count);
+      const covs = ss.map(p => p.r6.coverage);
+      return `<tr><td><span class="levtag"><i class="swatch" style="background:${lvColor(l)}"></i>Level ${l}</span></td><td class="num">K1–K${L.k} (${L.size})</td><td>${L.kind}</td><td class="num">${ss.length}</td><td class="num">${Math.min(...words)}–${Math.max(...words)}</td><td class="num">${fmtPct(Math.min(...covs), 2)}–${fmtPct(Math.max(...covs), 2)}</td></tr>`;
+    }).join('') + '</tbody>';
+  const allTokens = STORIES.reduce((a, s) => a + prepared.get(s.id).r6.total, 0);
+  $('#foot-stats').textContent = `${STORIES.length} readers · ${allTokens.toLocaleString('en')} running words · lowest coverage ${fmtPct(Math.min(...STORIES.map(s => prepared.get(s.id).r6.coverage)), 2)} at level.`;
+
+  const levelsReady = new Set(STORIES.map(s => s.level)).size;
+  $('#lib-eyebrow').textContent = `${STORIES.length} readers · ${levelsReady === 8 ? '8 levels' : levelsReady + ' of 8 levels ready'} · BNC/COCA word families`;
+
+  /* ---------- Genres ---------- */
+  let genrePick = store.get('genre', 'All'); let genreLevel = 0;
+  function renderGenres() {
+    const count = g => g === 'All' ? STORIES.length : STORIES.filter(s => s.subgenre === g || s.category === g).length;
+    const chip = g => `<button class="chip" type="button" data-g="${esc(g)}" aria-pressed="${genrePick === g}">${esc(g)} <span class="num" style="opacity:.7">${count(g)}</span></button>`;
+    $('#genre-nav').innerHTML = chip('All') + GENRES.map(([cat, subs]) => `<span class="group">${cat}</span>` + chip(cat) + subs.filter(g => count(g)).map(chip).join('')).join('');
+    const levels = [...new Set(STORIES.map(s => s.level))].sort((a, b) => a - b);
+    $('#genre-level').innerHTML = [`<button class="chip" type="button" data-gl="0" aria-pressed="${genreLevel === 0}">All levels</button>`]
+      .concat(levels.map(l => `<button class="chip" type="button" data-gl="${l}" aria-pressed="${genreLevel === l}"><i class="swatch" style="background:${lvColor(l)}"></i>K${l}</button>`)).join('');
+    const pick = s => (genrePick === 'All' || s.subgenre === genrePick || s.category === genrePick) && (!genreLevel || s.level === genreLevel);
+    const groups = GENRES.flatMap(([cat, subs]) => subs.map(g => [cat, g])).concat([['Other', null]]);
+    const known = new Set(GENRES.flatMap(([, subs]) => subs));
+    const html = groups.map(([cat, g]) => {
+      const list = STORIES.filter(s => pick(s) && (g ? s.subgenre === g : !known.has(s.subgenre))).sort((a, b) => a.level - b.level);
+      if (!list.length) return '';
+      return `<section class="genre-sec"><div class="shelf-head"><h2>${esc(g || 'Other')} <span class="count">${list.length}</span></h2><p class="kind eyebrow">${cat}</p></div><div class="books">${list.map(bookCard).join('')}</div></section>`;
+    }).join('');
+    $('#genre-list').innerHTML = html || '<p class="soon">No stories match this genre and level yet.</p>';
+  }
+  $('#genre-nav').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; genrePick = b.dataset.g; store.set('genre', genrePick); renderGenres(); });
+  $('#genre-level').addEventListener('click', e => { const b = e.target.closest('[data-gl]'); if (!b) return; genreLevel = +b.dataset.gl; renderGenres(); });
+
+  /* ---------- Routing ---------- */
+  function route() {
+    hidePop();
+    const h = location.hash.slice(1) || 'library';
+    if (study) study.leaving(h);
+    let view = h;
+    if (!(study ? study.views : ['library', 'genres', 'profiler', 'method']).includes(h)) view = openReader(h) ? 'reader' : 'library';
+    else document.title = 'The 98% Library';
+    document.querySelectorAll('section[data-view]').forEach(s => { s.hidden = s.dataset.view !== view; });
+    const tab = view === 'reader' ? 'library' : view;
+    document.querySelectorAll('.tabs a').forEach(a => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    if (view === 'reader') { $('#r-details').open = window.innerWidth > 960; }
+    if (view === 'genres' && !$('#genre-list').childElementCount) renderGenres();
+    if (view === 'test') study.openTest();
+    window.scrollTo(0, 0);
+  }
+  renderLibrary();
+  window.addEventListener('hashchange', route);
+  route();
+  window.__98lib = { analyse, prepared, lookup };
+})();
+</script>
+
+</body></html>
